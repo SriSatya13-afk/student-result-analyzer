@@ -1,7 +1,7 @@
 import pandas as pd
 
 # Load real Kaggle dataset
-df = pd.read_csv("students.csv")
+df = pd.read_csv("Students.csv")
 
 # See what we have
 print("Original columns:", df.columns.tolist())
