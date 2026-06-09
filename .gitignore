@@ -1,0 +1,7 @@
+ model.pkl
+students.db
+students_clean.csv
+__pycache__/
+*.pyc
+*.zip
+.env

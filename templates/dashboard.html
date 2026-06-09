@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Arial, sans-serif; background: #0f0f1a; min-height: 100vh; padding: 30px 16px; }
+        .container { max-width: 860px; margin: 0 auto; }
+        .header { text-align: center; margin-bottom: 24px; }
+        .title { font-size: 24px; font-weight: 700; color: #e2e8f0; }
+        .subtitle { font-size: 13px; color: #8892b0; margin-top: 6px; }
+        .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 18px; }
+        .stat { background: #1a1a2e; border-radius: 10px; padding: 14px 10px; text-align: center; border: 0.5px solid #2d2d4e; }
+        .stat-num { font-size: 20px; font-weight: 700; }
+        .stat-label { font-size: 11px; color: #8892b0; margin-top: 3px; }
+        .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+        .card { background: #1a1a2e; border-radius: 14px; padding: 20px; border: 0.5px solid #2d2d4e; margin-bottom: 14px; }
+        .card-title { font-size: 13px; font-weight: 600; color: #a5b4fc; margin-bottom: 14px; }
+        canvas { max-height: 200px; }
+        .tough-sub { font-size: 11px; color: #64748b; margin-bottom: 14px; margin-top: -10px; }
+        .tough-row { margin-bottom: 14px; padding-bottom: 14px; border-bottom: 0.5px solid #1f2937; }
+        .tough-row:last-of-type { border-bottom: none; }
+        .tough-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .tough-label { font-size: 13px; color: #cbd5e1; font-weight: 500; }
+        .tough-right { display: flex; align-items: center; gap: 8px; }
+        .fail-count { font-size: 12px; color: #f87171; font-weight: 600; }
+        .tough-badge { font-size: 10px; padding: 3px 10px; border-radius: 10px; font-weight: 600; }
+        .hard { background: #450a0a; color: #f87171; }
+        .medium { background: #431407; color: #fb923c; }
+        .easy { background: #052e16; color: #4ade80; }
+        .bar-track { height: 8px; background: #2d2d4e; border-radius: 4px; margin-bottom: 8px; }
+        .bar-fill { height: 8px; border-radius: 4px; }
+        .dist-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin-top: 8px; }
+        .dist-col { text-align: center; }
+        .dist-bar-wrap { height: 35px; display: flex; align-items: flex-end; justify-content: center; }
+        .dist-bar { width: 80%; border-radius: 2px 2px 0 0; }
+        .dist-label { font-size: 9px; color: #4b5563; margin-top: 2px; }
+        .dist-count { font-size: 10px; color: #94a3b8; font-weight: 600; }
+        .insight-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
+        .insight { background: #111827; border-radius: 8px; padding: 10px; border: 0.5px solid #1f2937; }
+        .insight-icon { font-size: 14px; margin-bottom: 4px; }
+        .insight-text { font-size: 11px; color: #94a3b8; line-height: 1.5; }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: #16213e; color: #818cf8; font-size: 11px; padding: 10px; text-align: left; }
+        td { font-size: 12px; color: #cbd5e1; padding: 10px; border-bottom: 0.5px solid #1f2937; }
+        .rank-num { color: #818cf8; font-weight: 700; }
+        .avg-green { color: #4ade80; font-weight: 600; }
+        .nav-pills { display: flex; gap: 8px; justify-content: center; margin-top: 6px; }
+        .pill { border-radius: 20px; padding: 7px 16px; font-size: 13px; font-weight: 500; text-decoration: none; }
+        .pill-inactive { background: #1a1a2e; border: 0.5px solid #2d2d4e; color: #818cf8; }
+        .pill-active { background: #4f46e5; color: white; border: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <div class="header">
+            <div class="title">📊 Dashboard</div>
+            <div class="subtitle">Insights from {{ overall.total }} real students</div>
+        </div>
+
+        <div class="stats-row">
+            <div class="stat">
+                <div class="stat-num" style="color:#4ade80;">{{ pass_count }}</div>
+                <div class="stat-label">Passed</div>
+            </div>
+            <div class="stat">
+                <div class="stat-num" style="color:#f87171;">{{ fail_count }}</div>
+                <div class="stat-label">Failed</div>
+            </div>
+            <div class="stat">
+                <div class="stat-num" style="color:#818cf8;">{{ pass_rate }}%</div>
+                <div class="stat-label">Pass rate</div>
+            </div>
+            <div class="stat">
+                <div class="stat-num" style="color:#06b6d4;">{{ overall.avg_score }}</div>
+                <div class="stat-label">Avg score</div>
+            </div>
+        </div>
+
+        <div class="charts-row">
+            <div class="card">
+                <div class="card-title">Pass vs Fail</div>
+                <canvas id="pieChart"></canvas>
+            </div>
+            <div class="card">
+                <div class="card-title">Subject averages</div>
+                <canvas id="barChart"></canvas>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">⚠️ Subject difficulty analysis</div>
+            <div class="tough-sub">Where students struggle most — based on failure and low score patterns</div>
+
+            {% set subjects = [
+                ("math", "📐 Math", subject_diff.math),
+                ("reading", "📖 Reading", subject_diff.reading),
+                ("writing", "✏️ Writing", subject_diff.writing)
+            ] %}
+            {% set sorted_subjects = subjects | sort(attribute='2.rank') %}
+
+            {% for key, label, data in sorted_subjects %}
+            <div class="tough-row">
+                <div class="tough-top">
+                    <span class="tough-label">{{ label }}</span>
+                    <div class="tough-right">
+                        <span class="fail-count">{{ data.failures }} failures</span>
+                        <span class="tough-badge {{ 'hard' if data.difficulty == 'Hardest' else ('medium' if data.difficulty == 'Medium' else 'easy') }}">
+                            {{ data.difficulty }}
+                        </span>
+                    </div>
+                </div>
+                <div class="bar-track">
+                    <div class="bar-fill" style="width: {{ (data.failures / overall.total * 100 * 5) | round }}%;
+                        background: {{ '#f87171' if data.difficulty == 'Hardest' else ('#fb923c' if data.difficulty == 'Medium' else '#4ade80') }};"></div>
+                </div>
+                <div class="dist-row">
+                    {% set dist_colors = ['#f87171','#fb923c','#facc15','#4ade80','#818cf8'] %}
+                    {% set dist_keys = ['0-40','41-60','61-75','76-90','91-100'] %}
+                    {% set max_val = [data.dist['0-40'], data.dist['41-60'], data.dist['61-75'], data.dist['76-90'], data.dist['91-100']] | max %}
+                    {% for i in range(5) %}
+                    {% set val = data.dist[dist_keys[i]] %}
+                    <div class="dist-col">
+                        <div class="dist-bar-wrap">
+                            <div class="dist-bar" style="height: {{ ((val / max_val) * 32) | round }}px; background: {{ dist_colors[i] }};"></div>
+                        </div>
+                        <div class="dist-label">{{ dist_keys[i] }}</div>
+                        <div class="dist-count">{{ val }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+
+            <div class="insight-row">
+                <div class="insight">
+                    <div class="insight-icon">🔴</div>
+                    <div class="insight-text">
+                        {% for key, label, data in sorted_subjects %}
+                        {% if data.difficulty == 'Hardest' %}
+                        {{ label }} has the highest failure rate. Institute should increase practice sessions.
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="insight">
+                    <div class="insight-icon">📉</div>
+                    <div class="insight-text">
+                        {% for key, label, data in sorted_subjects %}
+                        {% if data.difficulty == 'Hardest' %}
+                        {{ data.below60 }} students scored below 60 in {{ label }}.
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="insight">
+                    <div class="insight-icon">✅</div>
+                    <div class="insight-text">
+                        {% for key, label, data in sorted_subjects %}
+                        {% if data.difficulty == 'Easiest' %}
+                        {{ label }} is the strongest subject — students perform best here.
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="insight">
+                    <div class="insight-icon">🎯</div>
+                    <div class="insight-text">Overall pass rate is {{ pass_rate }}%. Target 100% with focused intervention.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">🏆 Top 5 students</div>
+            <table>
+                <tr>
+                    <th>#</th><th>Gender</th><th>Math</th>
+                    <th>Reading</th><th>Writing</th><th>Average</th>
+                </tr>
+                {% for i, s in enumerate(top_students) %}
+                <tr>
+                    <td class="rank-num">{{ i + 1 }}</td>
+                    <td>{{ s.gender }}</td>
+                    <td>{{ s.math }}</td>
+                    <td>{{ s.reading }}</td>
+                    <td>{{ s.writing }}</td>
+                    <td class="avg-green">{{ s.average }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+
+        <div class="nav-pills">
+            <a href="/" class="pill pill-inactive">🏠 Predict</a>
+            <a href="/dashboard" class="pill pill-active">📊 Dashboard</a>
+        </div>
+
+    </div>
+
+    <script>
+        new Chart(document.getElementById("pieChart"), {
+            type: "doughnut",
+            data: {
+                labels: ["Pass", "Fail"],
+                datasets: [{
+                    data: [{{ pass_count }}, {{ fail_count }}],
+                    backgroundColor: ["#4ade80", "#f87171"],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                plugins: {
+                    legend: {
+                        labels: { color: "#94a3b8", font: { size: 12 } }
+                    }
+                }
+            }
+        });
+
+        new Chart(document.getElementById("barChart"), {
+            type: "bar",
+            data: {
+                labels: ["Math", "Reading", "Writing"],
+                datasets: [{
+                    data: [{{ overall.avg_math }}, {{ overall.avg_reading }}, {{ overall.avg_writing }}],
+                    backgroundColor: ["#6366f1", "#06b6d4", "#f59e0b"],
+                    borderRadius: 6,
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        min: 50,
+                        max: 80,
+                        ticks: { color: "#94a3b8" },
+                        grid: { color: "#1f2937" }
+                    },
+                    x: {
+                        ticks: { color: "#94a3b8" },
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
